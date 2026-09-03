@@ -1,0 +1,143 @@
+name: minecraft-bedrock-hub
+
+services:
+  bedrock:
+    image: itzg/minecraft-bedrock-server:stable
+    container_name: minecraft-bedrock
+    restart: unless-stopped
+    stop_grace_period: 60s
+    stdin_open: true
+    tty: true
+    environment:
+      EULA: "${EULA:?Defina EULA=TRUE no arquivo .env depois de ler os termos}"
+      VERSION: LATEST
+      SERVER_NAME: "${SERVER_NAME:-Servidor Bedrock}"
+      LEVEL_NAME: "${LEVEL_NAME:-Mundo Principal}"
+      GAMEMODE: "${GAMEMODE:-survival}"
+      DIFFICULTY: "${DIFFICULTY:-normal}"
+      MAX_PLAYERS: "${MAX_PLAYERS:-10}"
+      VIEW_DISTANCE: "${VIEW_DISTANCE:-32}"
+      TICK_DISTANCE: "${TICK_DISTANCE:-4}"
+      ALLOW_CHEATS: "${ALLOW_CHEATS:-false}"
+      ONLINE_MODE: "true"
+      ALLOW_LIST: "${ALLOW_LIST:-false}"
+      ALLOW_LIST_USERS: "${ALLOW_LIST_USERS:-}"
+      OPS: "${OPS:-}"
+      DEFAULT_PLAYER_PERMISSION_LEVEL: member
+      TEXTUREPACK_REQUIRED: "false"
+      DISABLE_CUSTOM_SKINS: "false"
+      ENABLE_LAN_VISIBILITY: "true"
+      SERVER_PORT: "19132"
+      SERVER_PORT_V6: "19132"
+      ENABLE_BDS_V6BIND_FIX: "true"
+      ENABLE_SSH: "true"
+      RCON_PASSWORD: "${CONSOLE_PASSWORD:?Execute o script de configuracao para gerar CONSOLE_PASSWORD}"
+      STOP_SERVER_ANNOUNCE_DELAY: "10"
+      STOP_SERVER_ANNOUNCE: "say Servidor sera desligado em %delay% segundos."
+      TZ: "${TZ:-America/Bahia}"
+    ports:
+      - "${MINECRAFT_BIND_IP:-0.0.0.0}:${MINECRAFT_PORT:-19132}:19132/udp"
+    volumes:
+      - ./data:/data
+    networks:
+      - game
+      - control
+    healthcheck:
+      test: ["CMD", "mc-monitor", "status-bedrock", "--host", "127.0.0.1", "--port", "19132"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  panel:
+    build:
+      context: ./panel
+    container_name: minecraft-admin-panel
+    restart: unless-stopped
+    depends_on:
+      - docker-read-proxy
+      - docker-control-proxy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      PANEL_ADMIN_TOKEN: "${PANEL_ADMIN_TOKEN:?Execute o script de configuracao para gerar PANEL_ADMIN_TOKEN}"
+      SESSION_HOURS: "${SESSION_HOURS:-12}"
+      CONSOLE_PASSWORD: "${CONSOLE_PASSWORD:?Execute o script de configuracao para gerar CONSOLE_PASSWORD}"
+      BEDROCK_CONTAINER: minecraft-bedrock
+      BEDROCK_HOST: bedrock
+      BEDROCK_SSH_PORT: "2222"
+      DOCKER_READ_HOST: docker-read-proxy
+      DOCKER_CONTROL_HOST: docker-control-proxy
+      DOCKER_PROXY_PORT: "2375"
+      WORLD_ROOT: /minecraft-data/worlds
+      LEVEL_NAME: "${LEVEL_NAME:-Mundo Principal}"
+      SERVER_NAME: "${SERVER_NAME:-Servidor Bedrock}"
+      MINECRAFT_PORT: "${MINECRAFT_PORT:-19132}"
+      AUTO_UPDATE_TIME: "${AUTO_UPDATE_TIME:-05:00}"
+      TZ: "${TZ:-America/Bahia}"
+    ports:
+      - "127.0.0.1:${PANEL_PORT:-8080}:3000"
+    volumes:
+      - ./data:/minecraft-data:ro
+    networks:
+      - control
+    read_only: true
+    tmpfs:
+      - /tmp:size=4G,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  docker-read-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: minecraft-docker-read-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      POST: "0"
+      EVENTS: "0"
+      LOG_LEVEL: warning
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - control
+    read_only: true
+    tmpfs:
+      - /run
+      - /var/lib/haproxy
+    security_opt:
+      - no-new-privileges:true
+
+  docker-control-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: minecraft-docker-control-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "0"
+      POST: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      EVENTS: "0"
+      LOG_LEVEL: warning
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - control
+    read_only: true
+    tmpfs:
+      - /run
+      - /var/lib/haproxy
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  game:
+  control:
+    internal: true

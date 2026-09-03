@@ -1,0 +1,14 @@
+# Use este arquivo somente se o cloudflared estiver instalado no computador host.
+# Substitua os tres valores indicados e salve fora do repositorio, junto das
+# credenciais criadas pelo comando `cloudflared tunnel create`.
+
+tunnel: SEU-TUNNEL-UUID
+credentials-file: /CAMINHO/SEU-TUNNEL-UUID.json
+
+ingress:
+  - hostname: admin.seudominio.com
+    service: http://127.0.0.1:8080
+    originRequest:
+      connectTimeout: 10s
+      noHappyEyeballs: false
+  - service: http_status:404

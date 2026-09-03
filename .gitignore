@@ -1,0 +1,8 @@
+.env
+data/
+backups/
+panel/node_modules/
+panel/coverage/
+*.log
+.DS_Store
+Thumbs.db

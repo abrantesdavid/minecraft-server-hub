@@ -1,0 +1,38 @@
+name: Validar projeto
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  panel:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: panel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: panel/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm audit --omit=dev
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: sed -i 's/^EULA=FALSE/EULA=TRUE/' .env
+      - run: sed -i 's/^PANEL_ADMIN_TOKEN=.*/PANEL_ADMIN_TOKEN=ci-only-token-0123456789abcdef0123456789abcdef/' .env
+      - run: sed -i 's/^CONSOLE_PASSWORD=.*/CONSOLE_PASSWORD=ci-only-console-0123456789abcdef/' .env
+      - run: docker compose config --quiet
+      - run: docker compose build panel

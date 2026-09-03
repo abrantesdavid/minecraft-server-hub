@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0b0f0c">
+    <meta name="description" content="Painel privado para administrar um servidor Minecraft Bedrock.">
+    <title>Bedrock Control</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+
+    <section class="login-shell" id="login-shell" aria-labelledby="login-title">
+      <form class="login-card" id="login-form">
+        <div class="brand-mark" aria-hidden="true">BC</div>
+        <p class="eyebrow">ACESSO RESTRITO</p>
+        <h1 id="login-title">Bedrock Control</h1>
+        <p class="login-copy">Entre com o token administrativo criado durante a instalação.</p>
+        <label for="token">Token administrativo</label>
+        <div class="secret-field">
+          <input id="token" name="token" type="password" autocomplete="current-password" required minlength="32">
+          <button class="icon-button" id="toggle-token" type="button" aria-label="Mostrar token">Ver</button>
+        </div>
+        <p class="form-error" id="login-error" role="alert"></p>
+        <button class="button button-primary button-wide" type="submit">
+          <span>Entrar no painel</span>
+        </button>
+      </form>
+    </section>
+
+    <div class="app-shell" id="app-shell" hidden>
+      <header class="topbar">
+        <div class="brand-row">
+          <div class="brand-mark brand-mark-small" aria-hidden="true">BC</div>
+          <div>
+            <p class="eyebrow">BEDROCK CONTROL</p>
+            <h1 id="server-title">Servidor Bedrock</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="sync-label" id="sync-label">Sincronizando…</span>
+          <button class="button button-quiet" id="refresh-button" type="button">Atualizar</button>
+          <button class="button button-quiet" id="logout-button" type="button">Sair</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="status-strip" aria-label="Resumo do servidor">
+          <div class="server-state">
+            <span class="status-orb status-loading" id="status-orb" aria-hidden="true"></span>
+            <div>
+              <p class="status-label" id="status-label">Consultando servidor</p>
+              <p class="status-detail" id="status-detail">Aguarde um instante</p>
+            </div>
+          </div>
+          <dl class="metrics">
+            <div>
+              <dt>Versão</dt>
+              <dd id="version-value">—</dd>
+            </div>
+            <div>
+              <dt>Tempo ligado</dt>
+              <dd id="uptime-value">—</dd>
+            </div>
+            <div>
+              <dt>Porta</dt>
+              <dd id="port-value">19132 / UDP</dd>
+            </div>
+          </dl>
+          <div class="server-actions" aria-label="Controles do servidor">
+            <button class="button button-start" data-server-action="start" type="button">Ligar</button>
+            <button class="button button-secondary" data-server-action="restart" type="button">Reiniciar</button>
+            <button class="button button-danger" data-server-action="stop" type="button">Desligar</button>
+          </div>
+        </section>
+
+        <div class="workspace-grid">
+          <section class="panel console-panel" aria-labelledby="console-title">
+            <header class="panel-header">
+              <div>
+                <p class="panel-kicker">TEMPO REAL</p>
+                <h2 id="console-title">Console</h2>
+              </div>
+              <div class="console-tools">
+                <span class="stream-state" id="stream-state">Conectando</span>
+                <button class="text-button" id="clear-console" type="button">Limpar tela</button>
+              </div>
+            </header>
+            <div class="terminal" id="terminal" role="log" aria-live="polite" aria-label="Saída do console">
+              <div class="terminal-placeholder">Conectando ao fluxo de logs…</div>
+            </div>
+            <form class="command-form" id="command-form">
+              <span class="prompt" aria-hidden="true">›</span>
+              <label class="sr-only" for="command-input">Comando do servidor</label>
+              <input id="command-input" name="command" type="text" maxlength="500" autocomplete="off" spellcheck="false" placeholder="say Olá, jogadores!">
+              <button class="button button-primary" id="send-command" type="submit">Enviar</button>
+            </form>
+          </section>
+
+          <aside class="side-column">
+            <section class="panel world-panel" aria-labelledby="world-title">
+              <header class="panel-header">
+                <div>
+                  <p class="panel-kicker">ARQUIVOS</p>
+                  <h2 id="world-title">Mundo</h2>
+                </div>
+                <span class="world-badge" id="world-badge">Verificando</span>
+              </header>
+              <p class="world-name" id="world-name">Mundo Principal</p>
+              <dl class="world-stats">
+                <div>
+                  <dt>Tamanho</dt>
+                  <dd id="world-size">—</dd>
+                </div>
+                <div>
+                  <dt>Arquivos</dt>
+                  <dd id="world-files">—</dd>
+                </div>
+                <div>
+                  <dt>Última gravação</dt>
+                  <dd id="world-modified">—</dd>
+                </div>
+              </dl>
+              <button class="button button-primary button-wide" id="download-world" type="button">
+                Baixar mundo (.mcworld)
+              </button>
+              <p class="helper-text">O painel pausa as gravações por alguns segundos para criar uma cópia consistente e depois retoma o jogo.</p>
+            </section>
+
+            <section class="panel connection-panel" aria-labelledby="connection-title">
+              <header class="panel-header">
+                <div>
+                  <p class="panel-kicker">CONEXÃO</p>
+                  <h2 id="connection-title">Como entrar</h2>
+                </div>
+              </header>
+              <div class="connection-row">
+                <span>Rede local</span>
+                <code id="local-address">IP-DO-PC:19132</code>
+              </div>
+              <p class="helper-text">Fora de casa, use o endereço configurado no roteador ou no serviço UDP escolhido. O Cloudflare Tunnel protege somente este painel.</p>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="confirm-dialog" id="confirm-dialog">
+      <form method="dialog">
+        <p class="panel-kicker">CONFIRMAR AÇÃO</p>
+        <h2 id="confirm-title">Alterar estado do servidor?</h2>
+        <p id="confirm-copy">Os jogadores podem ser desconectados.</p>
+        <div class="dialog-actions">
+          <button class="button button-quiet" value="cancel">Cancelar</button>
+          <button class="button button-danger" id="confirm-action" value="confirm">Confirmar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "minecraft-bedrock-admin-panel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "check": "node --check src/server.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "archiver": "7.0.1",
+    "cookie-parser": "1.4.7",
+    "express": "5.1.0",
+    "express-rate-limit": "8.7.0",
+    "helmet": "8.1.0",
+    "ssh2": "1.16.0"
+  }
+}
